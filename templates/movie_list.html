@@ -1,0 +1,178 @@
+{% load static %}
+<!DOCTYPE html><html class=''>
+<head>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">  <link rel="stylesheet" type="text/css" href="{% static '/styles.css' %}">
+  <div class="container flex-column d-flex ">
+    <h1 class="text-center">Movie Recommend</h1>
+    <p class="text-center">Click on a movie card to select it. You should select minimum 5 movies to correct suggestion.</p>
+    <!-- Your existing code here -->
+  </div>
+  <form method="get" class="form-inline my-4">
+    <div class="form-group">
+      <label for="genre" class="mr-2">Genre:</label>
+      <select name="genre" id="genre" class="form-control">
+        <option value="">All genres</option>
+        <option value="action">Action</option>
+        <option value="comedy">Comedy</option>
+        <!-- Other genres here -->
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary ml-2">Filter</button>
+  </form>
+  <form id="search-form" class="form-inline my-4">
+    <input name="q" id="q" type="text" class="form-control mr-2" placeholder="Search movies...">
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+  
+<div class="container movie-container">
+
+	
+	{% for movie in page_obj %}
+	<div class="movie-card" data-id="{{ movie.id }}">
+		<div class="movie-header " style="background: url('https://image.tmdb.org/t/p/original{{ movie.poster_path }}');
+    background-size: cover;
+    background-position: 100% 100%;">
+			<div class="header-icon-container">
+				
+			</div>
+		</div><!--movie-header-->
+		<div class="movie-content">
+			<div class="movie-content-header ">
+				<p >
+					<h3 class="movie-title">{{ movie.title }}</h3>
+        </p>
+			</div>
+			<div class="movie-info">
+				<div class="info-section ">
+					<label class="release-date">{{ movie.release_date }}</label>
+					<span>{{ movie.overview|truncatewords:15 }}</span>
+				</div><!--date,time-->
+			</div>
+		</div><!--movie-content-->
+	</div><!--movie-card-->
+	{% endfor %}
+</div><!--container-->
+
+<div class="container justify-content-end align-items-center pagination">
+
+  <nav aria-label="Page navigation">
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page=1" aria-label="First">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+            <span aria-hidden="true">Prev</span>
+          </a>
+        </li>
+      {% endif %}
+  
+      <li class="page-item disabled">
+        <span class="page-link">
+          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+      </li>
+  
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+            <span aria-hidden="true">Next</span>
+          </a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+  </div>
+  <a href="{% url 'recommendations_page' %}" type="button" class="btn btn-primary" id="submit-btn">Go to Suggestions</a>
+<script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js" integrity="sha512-ykZ1QQr0Jy/4ZkvKuqWn4iF3lqPZyij9iRv6sGqLRdTPkY69YX6+7wvVGmsdBbiIfN/8OdsI7HABjvEok6ZopQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>
+  <script>
+    $(document).ready(function() {
+      var selectedMovies = []; // Seçilen filmlerin ID'lerini tutan dizi
+  
+      // Event delegation for dynamically added elements
+      $('.container').on('click', '.movie-card', function() {
+        var movieId = $(this).data('id'); // Film kartının ID'sini al
+  
+        // Film zaten seçilmişse, seçimden kaldır
+        if (selectedMovies.includes(movieId)) {
+          selectedMovies = selectedMovies.filter(id => id !== movieId);
+        } else { // Aksi takdirde, seçime ekle
+          selectedMovies.push(movieId);
+        }
+  
+        $(this).toggleClass('movie-selected'); // Seçili kartın sınıfını değiştir
+        $(this).find('.movie-content').toggleClass('text-white');
+        $(this).find('.release-date').toggleClass('text-white'); // Seçili kartın sınıfını değiştir
+        console.log('Selected movies:', selectedMovies); // Konsola seçili filmler listesini yazdır
+      });
+      $('#submit-btn').on('click', function(e) {
+        e.preventDefault(); // Prevent default behavior of the link
+  
+        // Construct a query string with selected movie IDs
+        var queryString = '?selectedMovies=' + selectedMovies.join(',');
+        
+        // Redirect to the recommendations page with the selected movies data
+        window.location.href = $(this).attr('href') + queryString;
+      });
+    });
+  </script>
+  
+
+  <script>
+    $(document).ready(function() {
+      $('#q').on('input', function() {
+        var query = $(this).val().trim(); // Get the value of the search input
+        
+        // Send an AJAX request to the server
+        $.ajax({
+          url: '{% url "search_movies" %}', // Update this with your Django URL endpoint for search
+          method: 'GET',
+          data: query ? {q: query} : {}, // Pass the search query as a parameter only if it's not empty
+          success: function(data) {
+            // Clear existing movie cards
+            $('.movie-container').empty();
+            $('.pagination').empty();
+
+
+            // Iterate over the received movie data and append movie cards
+            data.forEach(function(movie) {
+              var movieCard = `
+                <div class="movie-card" data-id="${movie.id}">
+                  <div class="movie-header" style="background: url('https://image.tmdb.org/t/p/original${movie.poster_path}');
+                    background-size: cover;
+                    background-position: 100% 100%;">
+                    <div class="header-icon-container"></div>
+                  </div><!--movie-header-->
+                  <div class="movie-content">
+                    <div class="movie-content-header">
+                      <p><h3 class="movie-title">${movie.title}</h3></p>
+                    </div>
+                    <div class="movie-info">
+                      <div class="info-section">
+                        <label class="release-date">${movie.release_date}</label>
+                        <span>${movie.overview}</span>
+                      </div><!--date,time-->
+                    </div>
+                  </div><!--movie-content-->
+                </div><!--movie-card-->
+              `;
+              $('.movie-container').append(movieCard);
+            });
+          }
+        });
+      });
+    });
+  </script>
+  
+  
+</body></html>
